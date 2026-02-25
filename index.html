@@ -1,0 +1,2058 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>RECNATORS CUP — Central (Resultados • Tabelas • Playoffs • Chat IA)</title>
+
+  <style>
+    :root{
+      --bg:#070A12;
+      --bg2:#0B1020;
+      --panel:rgba(255,255,255,.08);
+      --panel2:rgba(0,0,0,.35);
+      --line:rgba(255,255,255,.12);
+      --txt:#e8eefc;
+      --muted:#a9b4d0;
+      --accent:#60a5fa;
+      --ok:#22c55e;
+      --bad:#ef4444;
+      --warn:#f59e0b;
+      --shadow: 0 18px 55px rgba(0,0,0,.55);
+      --r:22px;
+    }
+
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; margin:0; }
+    body{
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color:var(--txt);
+      background:
+        radial-gradient(1200px 700px at 50% 30%, #121a33 0%, var(--bg2) 55%, #05070e 100%);
+    }
+
+    .wrap{ max-width:1200px; margin:0 auto; padding:14px; }
+
+    header{
+      display:flex; flex-wrap:wrap; gap:12px; align-items:center; justify-content:space-between;
+      padding:14px 14px;
+      border:1px solid var(--line);
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(0,0,0,.25));
+      border-radius:22px;
+      box-shadow:var(--shadow);
+      position:sticky; top:10px; z-index:20;
+      backdrop-filter: blur(10px);
+    }
+
+    .brand{ display:flex; gap:12px; align-items:center; min-width:280px; }
+    .logo{
+      width:46px; height:46px; border-radius:16px;
+      background: rgba(255,255,255,.08);
+      border:1px solid var(--line);
+      display:grid; place-items:center;
+      flex:0 0 auto;
+      box-shadow: 0 10px 30px rgba(0,0,0,.35);
+    }
+    .brand h1{ font-size:16px; margin:0; letter-spacing:.4px; font-weight:950; }
+    .brand p{ margin:0; color:var(--muted); font-size:12px; line-height:1.35; font-weight:750; }
+
+    .tabs{
+      display:flex; gap:8px; flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+    .tab{
+      appearance:none;
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.06);
+      color:var(--txt);
+      padding:10px 12px;
+      border-radius:999px;
+      cursor:pointer;
+      font-weight:950;
+      transition: transform .08s ease, background .2s ease, border-color .2s ease;
+    }
+    .tab:active{ transform: scale(.98); }
+    .tab[aria-selected="true"]{
+      background: rgba(96,165,250,.18);
+      border-color: rgba(96,165,250,.35);
+    }
+    .tab[disabled]{
+      opacity:.45; cursor:not-allowed;
+    }
+
+    .actions{ display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
+    .btn{
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.06);
+      color:var(--txt);
+      padding:10px 12px;
+      border-radius:999px;
+      font-weight:950;
+      cursor:pointer;
+      transition: transform .08s ease;
+    }
+    .btn:active{ transform: scale(.98); }
+    .btn.danger{ border-color: rgba(239,68,68,.35); background: rgba(239,68,68,.10); }
+    .btn.good{ border-color: rgba(34,197,94,.35); background: rgba(34,197,94,.10); }
+
+    .grid{ display:grid; grid-template-columns: 1fr; gap:14px; margin-top:14px; }
+
+    .card{
+      border:1px solid var(--line);
+      border-radius:22px;
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(0,0,0,.35));
+      box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+    .cardHead{
+      display:flex; flex-wrap:wrap; gap:10px;
+      align-items:center; justify-content:space-between;
+      padding:14px 14px;
+      border-bottom:1px solid var(--line);
+      background: rgba(0,0,0,.20);
+    }
+    .cardHead h2{ margin:0; font-size:14px; letter-spacing:.4px; font-weight:950; }
+    .hint{ color:var(--muted); font-size:12px; font-weight:800; }
+
+    .section{ padding:14px; }
+
+    .kpis{
+      display:grid;
+      grid-template-columns: repeat(4, minmax(0,1fr));
+      gap:10px;
+    }
+    .kpi{
+      background: rgba(0,0,0,.22);
+      border:1px solid rgba(255,255,255,.10);
+      border-radius:18px;
+      padding:12px;
+    }
+    .kpi .n{ font-size:22px; font-weight:1000; }
+    .kpi .l{ font-size:12px; font-weight:900; color:var(--muted); }
+
+    .note{
+      color:rgba(232,238,252,.90);
+      font-size:12px;
+      line-height:1.45;
+      font-weight:850;
+    }
+
+    /* ====== Day blocks + matches ====== */
+    .dayGrid{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap:14px;
+    }
+    .dayTitle{
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      padding:12px 14px;
+      border-bottom:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.18);
+      font-weight:1000;
+    }
+    .badgePill{
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.06);
+      font-weight:1000;
+      white-space:nowrap;
+    }
+
+    .groupsWrap{ display:grid; gap:12px; }
+
+    .groupBlock{
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.18);
+      border-radius:22px;
+      overflow:hidden;
+    }
+    .groupHead{
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      padding:12px 14px;
+      border-bottom:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.16);
+    }
+    .groupHead .t{ font-weight:1000; letter-spacing:.6px; }
+    .groupHead .m{ color:var(--muted); font-size:12px; font-weight:900; }
+
+    .matches{ padding:12px; display:grid; gap:10px; }
+
+    .match{
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.22);
+      border-radius:18px;
+      padding:12px;
+      display:grid;
+      gap:10px;
+    }
+    .matchTop{
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      color:var(--muted);
+      font-size:12px;
+      font-weight:900;
+    }
+    .seriesPill{
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.06);
+      font-weight:1000;
+      color:var(--txt);
+      white-space:nowrap;
+    }
+
+    .rowTeams{
+      display:grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap:10px;
+      align-items:center;
+    }
+    .side{
+      display:flex; align-items:center; gap:10px;
+      min-width: 0;
+    }
+    .side.right{ justify-content:flex-end; }
+
+    /* fotos (se você usar depois) */
+    .teamImg{
+      width:66px;
+      height:66px;
+      border-radius:50%;
+      object-fit:cover;
+      flex:0 0 auto;
+      background: transparent;
+      display:block;
+    }
+
+    /* ajuste do Imperial / logos "cortados": controle via object-position */
+    .teamImg[data-team="imperial"]{ object-position: 50% 80%; }
+    .teamImg[data-team="darkskull"]{ object-position: 50% 65%; }
+    .teamImg[data-team="shadowforce"]{ object-position: 50% 65%; }
+
+    .name{
+      font-weight:1000;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+    .vs{ font-weight:1000; opacity:.85; padding:6px 10px; }
+
+    .games{
+      display:grid;
+      gap:8px;
+    }
+    .gameRow{
+      display:grid;
+      grid-template-columns: 56px 1fr 22px 1fr;
+      gap:10px;
+      align-items:center;
+    }
+    .glabel{ color:var(--muted); font-size:12px; font-weight:950; }
+
+    .scoreInput{
+      width:100%;
+      padding:10px 10px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      color:var(--txt);
+      font-weight:1000;
+      font-size:16px;
+      text-align:center;
+      outline:none;
+    }
+    .scoreInput:focus{
+      border-color: rgba(96,165,250,.55);
+      box-shadow: 0 0 0 3px rgba(96,165,250,.20);
+    }
+    .scoreInput:disabled{
+      opacity:.45;
+      cursor:not-allowed;
+      filter:saturate(.7);
+    }
+
+    /* remove setinhas input number */
+    input[type=number]::-webkit-outer-spin-button,
+    input[type=number]::-webkit-inner-spin-button{ -webkit-appearance: none; margin: 0; }
+    input[type=number]{ -moz-appearance: textfield; }
+
+    /* ====== Tables ====== */
+    table{
+      width:100%;
+      border-collapse:separate;
+      border-spacing:0;
+      overflow:hidden;
+      border-radius:16px;
+      border:1px solid var(--line);
+      background: rgba(0,0,0,.22);
+      table-layout:fixed;
+      min-width: 760px;
+    }
+    thead th{
+      background: rgba(0,0,0,.35);
+      border-bottom:1px solid var(--line);
+      padding:10px 8px;
+      font-size:12px;
+      text-align:center;
+      color:var(--muted);
+      white-space:nowrap;
+      font-weight:950;
+    }
+    tbody td{
+      padding:10px 8px;
+      border-bottom:1px solid rgba(255,255,255,.06);
+      font-size:13px;
+      text-align:center;
+      vertical-align:middle;
+      font-weight:950;
+    }
+    tbody tr:last-child td{ border-bottom:none; }
+
+    .tdTeam{
+      text-align:left;
+      display:flex; align-items:center; gap:10px;
+      min-width: 220px;
+    }
+    .miniDot{
+      width:12px; height:12px;
+      border-radius:999px;
+      background: rgba(255,255,255,.25);
+      flex:0 0 auto;
+    }
+    .rowGood .miniDot{ background: rgba(34,197,94,.75); }
+    .rowBad  .miniDot{ background: rgba(239,68,68,.75); }
+    .teamName{ font-weight:1000; letter-spacing:.2px; }
+
+    .rowGood{ background: rgba(34,197,94,.06); }
+    .rowBad{ background: rgba(239,68,68,.06); }
+
+    /* ====== Playoffs bracket ====== */
+    .bracket{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap:14px;
+    }
+    .brCols{
+      display:grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap:12px;
+      align-items:start;
+    }
+    .col{
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.18);
+      border-radius:20px;
+      overflow:hidden;
+    }
+    .colHead{
+      padding:12px 14px;
+      border-bottom:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.16);
+      font-weight:1000;
+      display:flex; justify-content:space-between; align-items:center; gap:10px;
+    }
+    .slots{ padding:12px; display:grid; gap:10px; }
+    .slot{
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.22);
+      border-radius:16px;
+      padding:12px;
+      display:grid;
+      gap:8px;
+    }
+    .slot .top{
+      display:flex; justify-content:space-between; align-items:center; gap:8px;
+      color:var(--muted);
+      font-size:12px;
+      font-weight:900;
+    }
+    .pair{
+      display:grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap:8px;
+      align-items:center;
+    }
+    .pname{
+      font-weight:1000;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+    .pname.right{ text-align:right; }
+    .mode{
+      padding:5px 10px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.06);
+      font-weight:1000;
+      white-space:nowrap;
+      color:var(--txt);
+    }
+
+    /* ====== Chat ====== */
+    .chatWrap{
+      display:grid;
+      grid-template-columns: 1fr 360px;
+      gap:14px;
+    }
+    .chatCard{
+      display:flex; flex-direction:column;
+      min-height: 70vh;
+    }
+    .msgs{
+      padding:14px;
+      overflow:auto;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      flex:1;
+    }
+    .bubble{
+      max-width: 92%;
+      padding:12px 12px;
+      border-radius: 18px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.22);
+      line-height:1.35;
+      font-weight:850;
+      white-space:pre-wrap;
+      word-break:break-word;
+    }
+    .me{ align-self:flex-end; background: rgba(96,165,250,.14); border-color: rgba(96,165,250,.25); }
+    .bot{ align-self:flex-start; }
+    .composer{
+      border-top:1px solid var(--line);
+      padding:12px;
+      display:flex;
+      gap:10px;
+      background: rgba(0,0,0,.18);
+    }
+    .in{
+      flex:1;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      color:var(--txt);
+      padding:12px 12px;
+      border-radius:16px;
+      outline:none;
+      font-weight:900;
+      font-size:14px;
+    }
+    .in:focus{
+      border-color: rgba(96,165,250,.55);
+      box-shadow: 0 0 0 3px rgba(96,165,250,.20);
+    }
+    .send{
+      padding:12px 14px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      color:var(--txt);
+      font-weight:1000;
+      cursor:pointer;
+    }
+    .send:active{ transform: scale(.98); }
+
+    .sidePanel{ padding:14px; display:grid; gap:10px; }
+    .pill{
+      padding:10px 12px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.06);
+      font-weight:950;
+      cursor:pointer;
+      user-select:none;
+    }
+    .pill:hover{ border-color: rgba(96,165,250,.35); }
+
+    @media (max-width: 980px){
+      .chatWrap{ grid-template-columns: 1fr; }
+      .kpis{ grid-template-columns: 1fr 1fr; }
+      .brCols{ grid-template-columns: 1fr; }
+    }
+    @media (max-width: 720px){
+      .wrap{ padding:12px; }
+      table{ min-width: 720px; }
+      .rowTeams{ grid-template-columns: 1fr; }
+      .side, .side.right{ justify-content:center; }
+      .vs{ text-align:center; }
+      .teamImg{ width:64px; height:64px; }
+      .gameRow{ grid-template-columns: 54px 1fr 18px 1fr; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <div class="logo">🏆</div>
+        <div>
+          <h1>RECNATORS CUP — Central</h1>
+          <p>
+            Fase de grupos <b>MD3</b> • Top 2 de cada grupo → <b>Playoffs (16)</b><br>
+            Oitavas/Quartas <b>MD3</b> • Semi/Final <b>MD5</b> • Tudo salva no navegador
+          </p>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn good" id="btnCopyView">Copiar (aba atual)</button>
+        <button class="btn danger" id="btnResetAll">Resetar tudo</button>
+      </div>
+
+      <div class="tabs" role="tablist" aria-label="Abas">
+        <button class="tab" role="tab" data-view="home" aria-selected="true">Visão Geral</button>
+        <button class="tab" role="tab" data-view="schedule" aria-selected="false">Calendário + Resultados</button>
+        <button class="tab" role="tab" data-view="tables" aria-selected="false">Tabelas (por grupo)</button>
+        <button class="tab" role="tab" data-view="playoffs" aria-selected="false" id="tabPlayoffs" disabled>Playoffs</button>
+        <button class="tab" role="tab" data-view="chat" aria-selected="false">Chat IA</button>
+      </div>
+    </header>
+
+    <main class="grid" id="content"></main>
+  </div>
+
+<script>
+/* =========================================================
+  BASE — RECNATORS CUP (Grupos + Calendário)
+========================================================= */
+const CAMP = {
+  name: "RECNATORS CUP",
+  groupStageMode: "MD3",
+  playoffs: {
+    oitavas: "MD3",
+    quartas: "MD3",
+    semifinal: "MD5",
+    final: "MD5"
+  },
+  groups: {
+    A: ["TOG", "Sky Elite", "park club", "Hawks"],
+    B: ["The Fury Foxes", "Tropopcorn", "Imperial Strikers", "Dark Skull"],
+    C: ["angels rl", "Vst", "Trapaceiros FC", "Stage7"],
+    D: ["Elementais", "Deportivo WW", "Lemon - e sports", "Logseven B"],
+    E: ["saposGamers", "The Legends", "Alvinegros RL", "Gladiators rl"],
+    F: ["SuperNovaRl", "Dragon", "Nightfall esports", "Nytrix"],
+    G: ["Forest Crows", "Prodígio", "grand seven7", "Attacs"],
+    H: ["Se kikana", "logseven", "Cyclone", "Hush B/Cyclone"]
+  },
+  schedule: [
+    // RODADA 1
+    { round: 1, date: "27/02", groups: ["A","B"], matches: [
+      { group:"A", a:"park club", b:"Hawks" },
+      { group:"A", a:"TOG", b:"Sky Elite" },
+      { group:"B", a:"Tropopcorn", b:"Imperial Strikers" },
+      { group:"B", a:"Dark Skull", b:"The Fury Foxes" }
+    ]},
+    { round: 1, date: "28/02", groups: ["C","D"], matches: [
+      { group:"C", a:"angels rl", b:"Trapaceiros FC" },
+      { group:"C", a:"Stage7", b:"Vst" },
+      { group:"D", a:"Elementais", b:"Lemon - e sports" },
+      { group:"D", a:"Deportivo WW", b:"Logseven B" }
+    ]},
+    { round: 1, date: "01/03", groups: ["E","F"], matches: [
+      { group:"E", a:"saposGamers", b:"Alvinegros RL" },
+      { group:"E", a:"Gladiators rl", b:"The Legends" },
+      { group:"F", a:"Dragon", b:"Nightfall esports" },
+      { group:"F", a:"Nytrix", b:"SuperNovaRl" }
+    ]},
+    { round: 1, date: "02/03", groups: ["G","H"], matches: [
+      { group:"G", a:"Attacs", b:"grand seven7" },
+      { group:"G", a:"Forest Crows", b:"Prodígio" },
+      // Aqui o seu texto ficou ambíguo, mas mantenho como veio:
+      { group:"H", a:"Hush B/Cyclone", b:"Hush B/Cyclone" },
+      { group:"H", a:"logseven", b:"Se kikana" }
+    ]},
+
+    // RODADA 2
+    { round: 2, date: "03/03", groups: ["A","B"], matches: [
+      { group:"A", a:"Hawks", b:"Sky Elite" },
+      { group:"A", a:"park club", b:"TOG" },
+      { group:"B", a:"Imperial Strikers", b:"The Fury Foxes" },
+      { group:"B", a:"Tropopcorn", b:"Dark Skull" }
+    ]},
+    { round: 2, date: "04/03", groups: ["C","D"], matches: [
+      { group:"C", a:"Trapaceiros FC", b:"Vst" },
+      { group:"C", a:"angels rl", b:"Stage7" },
+      { group:"D", a:"Lemon - e sports", b:"Logseven B" },
+      { group:"D", a:"Elementais", b:"Deportivo WW" }
+    ]},
+    { round: 2, date: "05/03", groups: ["E","F"], matches: [
+      { group:"E", a:"Alvinegros RL", b:"The Legends" },
+      { group:"E", a:"saposGamers", b:"Gladiators rl" },
+      { group:"F", a:"Nightfall esports", b:"SuperNovaRl" },
+      { group:"F", a:"Dragon", b:"Nytrix" }
+    ]},
+    { round: 2, date: "06/03", groups: ["G","H"], matches: [
+      { group:"G", a:"grand seven7", b:"Prodígio" },
+      { group:"G", a:"Attacs", b:"Forest Crows" },
+      { group:"H", a:"Hush B/Cyclone", b:"Se kikana" },
+      { group:"H", a:"Hush B/Cyclone", b:"logseven" }
+    ]},
+
+    // RODADA 3
+    { round: 3, date: "07/03", groups: ["A","B"], matches: [
+      { group:"A", a:"Hawks", b:"TOG" },
+      { group:"A", a:"Sky Elite", b:"park club" },
+      { group:"B", a:"Imperial Strikers", b:"Dark Skull" },
+      { group:"B", a:"The Fury Foxes", b:"Tropopcorn" }
+    ]},
+    { round: 3, date: "08/03", groups: ["C","D"], matches: [
+      { group:"C", a:"Trapaceiros FC", b:"Stage7" },
+      { group:"C", a:"Vst", b:"angels rl" },
+      { group:"D", a:"Lemon - e sports", b:"Deportivo WW" },
+      { group:"D", a:"Logseven B", b:"Elementais" }
+    ]},
+    { round: 3, date: "09/03", groups: ["E","F"], matches: [
+      { group:"E", a:"Alvinegros RL", b:"Gladiators rl" },
+      { group:"E", a:"The Legends", b:"saposGamers" },
+      { group:"F", a:"Nightfall esports", b:"Nytrix" },
+      { group:"F", a:"SuperNovaRl", b:"Dragon" }
+    ]},
+    { round: 3, date: "10/03", groups: ["G","H"], matches: [
+      { group:"G", a:"grand seven7", b:"Forest Crows" },
+      { group:"G", a:"Prodígio", b:"Attacs" },
+      { group:"H", a:"Hush B/Cyclone", b:"logseven" },
+      { group:"H", a:"Se kikana", b:"Hush B/Cyclone" }
+    ]}
+  ]
+};
+
+/* =========================================================
+  STORAGE (separado pra não puxar coisa antiga)
+========================================================= */
+const KEY_STATE = "recnators_state_v1";
+const KEY_VIEW  = "recnators_view_v1";
+const KEY_CHAT  = "recnators_chat_v1";
+
+/* =========================================================
+  HELPERS (texto, ids, normalização)
+========================================================= */
+const content = document.getElementById("content");
+const tabs = Array.from(document.querySelectorAll(".tab"));
+const tabPlayoffs = document.getElementById("tabPlayoffs");
+
+function esc(s){
+  return String(s).replace(/[&<>"']/g, m => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  }[m]));
+}
+
+function normalize(s){
+  return String(s).toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+    .replace(/\s+/g," ").trim();
+}
+
+function teamKey(name){
+  // chave estável
+  return normalize(name)
+    .replace(/[^a-z0-9]+/g,"_")
+    .replace(/^_+|_+$/g,"");
+}
+
+function matchId(kind, meta){
+  // kind: "GS" (group stage) ou "PO" (playoffs)
+  // meta: objeto de campos
+  const base = JSON.stringify(meta);
+  // hash simples
+  let h = 0;
+  for(let i=0;i<base.length;i++){
+    h = ((h<<5) - h) + base.charCodeAt(i);
+    h |= 0;
+  }
+  return `${kind}_${Math.abs(h)}`;
+}
+
+function cssEscape(s){
+  // ids seguros pra querySelector
+  return String(s).replace(/[^a-zA-Z0-9_-]/g, "\\$&");
+}
+
+function clampInt(v, min, max){
+  if(v === "" || v === null || v === undefined) return "";
+  const n = parseInt(v, 10);
+  if(!Number.isFinite(n)) return "";
+  if(n < min) return String(min);
+  if(n > max) return String(max);
+  return String(n);
+}
+
+/* =========================================================
+  STATE
+  - group stage: state.gs[matchId] = [{a:"",b:""},{a:"",b:""},{a:"",b:""}]
+  - playoffs:     state.po[matchId] = [{a:"",b:""},{a:"",b:""},...]
+========================================================= */
+function defaultState(){
+  return {
+    gs: {},
+    po: {},
+    meta: { playoffsUnlocked:false }
+  };
+}
+
+function loadState(){
+  try{
+    const raw = localStorage.getItem(KEY_STATE);
+    return raw ? JSON.parse(raw) : defaultState();
+  }catch{
+    return defaultState();
+  }
+}
+
+function saveState(){
+  localStorage.setItem(KEY_STATE, JSON.stringify(state));
+}
+
+function resetAll(){
+  localStorage.removeItem(KEY_STATE);
+  localStorage.removeItem(KEY_VIEW);
+  localStorage.removeItem(KEY_CHAT);
+  state = defaultState();
+  currentView = "home";
+  render();
+  setActiveTab("home");
+}
+
+/* =========================================================
+  SERIES LOGIC (MD3 / MD5 com gols)
+  - cada jogo: decide vencedor se a>b (sem empate contar)
+  - série decidida quando alguém chega ao neededWins
+  - trava jogos extras se já decidiu antes
+  - GF/GA: soma gols digitados (só dos jogos válidos — se travar, limpa)
+========================================================= */
+function gameWinner(a,b){
+  if(!Number.isFinite(a) || !Number.isFinite(b)) return null;
+  if(a > b) return "A";
+  if(b > a) return "B";
+  return null; // empate não conta
+}
+
+function seriesInfo(games, neededWins){
+  let wA=0, wB=0, gfA=0, gfB=0;
+
+  for(const g of games){
+    const a = (g?.a==="" ? null : parseInt(g.a,10));
+    const b = (g?.b==="" ? null : parseInt(g.b,10));
+
+    if(Number.isFinite(a)) gfA += a;
+    if(Number.isFinite(b)) gfB += b;
+
+    const win = gameWinner(a,b);
+    if(win==="A") wA++;
+    if(win==="B") wB++;
+  }
+
+  const decided = (wA >= neededWins || wB >= neededWins);
+  const winner = (wA >= neededWins) ? "A" : ((wB >= neededWins) ? "B" : null);
+
+  // trava jogos extras quando já decidiu antes do fim:
+  // lockFrom = índice do primeiro jogo "extra" que deve travar
+  let lockFrom = null;
+  let wAtemp=0, wBtemp=0;
+  for(let i=0;i<games.length;i++){
+    const a = (games[i]?.a==="" ? null : parseInt(games[i].a,10));
+    const b = (games[i]?.b==="" ? null : parseInt(games[i].b,10));
+    const win = gameWinner(a,b);
+    if(win==="A") wAtemp++;
+    if(win==="B") wBtemp++;
+    if(wAtemp>=neededWins || wBtemp>=neededWins){
+      lockFrom = i+1; // travar a partir do próximo
+      break;
+    }
+  }
+
+  return { wA,wB,decided,winner,gfA,gfB,lockFrom };
+}
+
+/* =========================================================
+  BUILD GROUP STAGE MATCH IDS MAP
+========================================================= */
+function buildGroupStageIndex(){
+  const idx = []; // array de {id, round, date, group, a, b}
+  for(const block of CAMP.schedule){
+    for(const m of block.matches){
+      const id = matchId("GS", { round:block.round, date:block.date, group:m.group, a:m.a, b:m.b });
+      idx.push({ id, round:block.round, date:block.date, group:m.group, a:m.a, b:m.b });
+    }
+  }
+  return idx;
+}
+
+const GS_INDEX = buildGroupStageIndex();
+
+/* =========================================================
+  GET/SET SERIES STATE
+========================================================= */
+function getGsSeries(id){
+  return state.gs[id] || [{a:"",b:""},{a:"",b:""},{a:"",b:""}];
+}
+function setGsGame(id, i, aVal, bVal){
+  const s = JSON.parse(JSON.stringify(getGsSeries(id)));
+  s[i] = { a:aVal, b:bVal };
+  state.gs[id] = s;
+  saveState();
+}
+
+function getPoSeries(id, len){
+  const existing = state.po[id];
+  if(existing && Array.isArray(existing) && existing.length === len) return existing;
+  const fresh = Array.from({length:len}, ()=>({a:"",b:""}));
+  state.po[id] = fresh;
+  saveState();
+  return fresh;
+}
+function setPoGame(id, i, aVal, bVal){
+  const s = JSON.parse(JSON.stringify(state.po[id] || []));
+  s[i] = { a:aVal, b:bVal };
+  state.po[id] = s;
+  saveState();
+}
+
+/* =========================================================
+  TABLES (PTS / SG / GF / GA)
+  - Vitória da série = 3 pts
+  - Desempate: PTS, SG, GF
+========================================================= */
+function computeGroupTable(groupKey){
+  const teams = CAMP.groups[groupKey].slice();
+  const st = {};
+  for(const t of teams){
+    st[t] = { pts:0, v:0, d:0, gf:0, ga:0, sg:0, played:0, decided:0 };
+  }
+
+  // varrer todos os matches do grupo
+  for(const item of GS_INDEX){
+    if(item.group !== groupKey) continue;
+    const series = getGsSeries(item.id);
+    const info = seriesInfo(series, 2);
+
+    // soma gols (mesmo sem decisão)
+    st[item.a].gf += info.gfA;
+    st[item.a].ga += info.gfB;
+    st[item.b].gf += info.gfB;
+    st[item.b].ga += info.gfA;
+
+    // contagem de "played": se tem ao menos um jogo preenchido
+    const anyFilled = series.some(g => (g.a!=="" || g.b!==""));
+    if(anyFilled){
+      st[item.a].played += 1;
+      st[item.b].played += 1;
+    }
+
+    if(info.decided){
+      st[item.a].decided += 1;
+      st[item.b].decided += 1;
+      if(info.winner === "A"){
+        st[item.a].pts += 3; st[item.a].v += 1;
+        st[item.b].d += 1;
+      }else if(info.winner === "B"){
+        st[item.b].pts += 3; st[item.b].v += 1;
+        st[item.a].d += 1;
+      }
+    }
+  }
+
+  for(const t of teams){
+    st[t].sg = st[t].gf - st[t].ga;
+  }
+
+  const rows = teams.map(t => ({ team:t, ...st[t] }));
+
+  rows.sort((A,B)=>{
+    if(B.pts !== A.pts) return B.pts - A.pts;
+    if(B.sg  !== A.sg ) return B.sg  - A.sg;
+    if(B.gf  !== A.gf ) return B.gf  - A.gf;
+    return A.team.localeCompare(B.team, "pt-BR");
+  });
+
+  return rows;
+}
+
+function computeAllTables(){
+  const out = {};
+  for(const gKey of Object.keys(CAMP.groups)){
+    out[gKey] = computeGroupTable(gKey);
+  }
+  return out;
+}
+
+/* =========================================================
+  UNLOCK PLAYOFFS
+  - playoffs liberado quando TODOS os confrontos da fase de grupos estiverem decididos
+========================================================= */
+function groupStageIsComplete(){
+  for(const item of GS_INDEX){
+    const info = seriesInfo(getGsSeries(item.id), 2);
+    if(!info.decided) return false;
+  }
+  return true;
+}
+
+/* =========================================================
+  PLAYOFFS SEEDING (16 times)
+  - pega top2 de cada grupo
+  - seed padrão (exemplo):
+    Oitavas:
+      M1: A1 vs B2
+      M2: C1 vs D2
+      M3: E1 vs F2
+      M4: G1 vs H2
+      M5: B1 vs A2
+      M6: D1 vs C2
+      M7: F1 vs E2
+      M8: H1 vs G2
+  - Quartas: W1 vs W2, W3 vs W4, W5 vs W6, W7 vs W8
+  - Semi: WQ1 vs WQ2, WQ3 vs WQ4
+  - Final: WS1 vs WS2
+========================================================= */
+function getTop2ByGroup(){
+  const tables = computeAllTables();
+  const top2 = {};
+  for(const gKey of Object.keys(CAMP.groups)){
+    const rows = tables[gKey];
+    top2[gKey] = { one: rows[0]?.team || null, two: rows[1]?.team || null };
+  }
+  return top2;
+}
+
+function buildPlayoffsBracket(){
+  const top2 = getTop2ByGroup();
+
+  const R16 = [
+    { code:"R16-1", a: top2.A.one, b: top2.B.two, mode:"MD3" },
+    { code:"R16-2", a: top2.C.one, b: top2.D.two, mode:"MD3" },
+    { code:"R16-3", a: top2.E.one, b: top2.F.two, mode:"MD3" },
+    { code:"R16-4", a: top2.G.one, b: top2.H.two, mode:"MD3" },
+
+    { code:"R16-5", a: top2.B.one, b: top2.A.two, mode:"MD3" },
+    { code:"R16-6", a: top2.D.one, b: top2.C.two, mode:"MD3" },
+    { code:"R16-7", a: top2.F.one, b: top2.E.two, mode:"MD3" },
+    { code:"R16-8", a: top2.H.one, b: top2.G.two, mode:"MD3" }
+  ];
+
+  // placeholders (winners)
+  const QF = [
+    { code:"QF-1", a: {from:"R16-1"}, b: {from:"R16-2"}, mode:"MD3" },
+    { code:"QF-2", a: {from:"R16-3"}, b: {from:"R16-4"}, mode:"MD3" },
+    { code:"QF-3", a: {from:"R16-5"}, b: {from:"R16-6"}, mode:"MD3" },
+    { code:"QF-4", a: {from:"R16-7"}, b: {from:"R16-8"}, mode:"MD3" }
+  ];
+
+  const SF = [
+    { code:"SF-1", a: {from:"QF-1"}, b: {from:"QF-2"}, mode:"MD5" },
+    { code:"SF-2", a: {from:"QF-3"}, b: {from:"QF-4"}, mode:"MD5" }
+  ];
+
+  const F = [
+    { code:"F-1", a: {from:"SF-1"}, b: {from:"SF-2"}, mode:"MD5" }
+  ];
+
+  return { R16, QF, SF, F };
+}
+
+function resolveName(node, winnersMap){
+  if(node === null || node === undefined) return "—";
+  if(typeof node === "string") return node;
+  if(typeof node === "object" && node.from){
+    return winnersMap[node.from] || "—";
+  }
+  return "—";
+}
+
+function seriesNeededWins(mode){
+  return (mode === "MD5") ? 3 : 2;
+}
+function seriesLen(mode){
+  return (mode === "MD5") ? 5 : 3;
+}
+
+function computePlayoffWinner(code, aName, bName, mode){
+  if(!aName || !bName || aName==="—" || bName==="—") return null;
+
+  const id = matchId("PO", { code, a:aName, b:bName, mode });
+  const games = getPoSeries(id, seriesLen(mode));
+  const info = seriesInfo(games, seriesNeededWins(mode));
+  if(!info.decided) return null;
+  return (info.winner === "A") ? aName : bName;
+}
+
+/* =========================================================
+  RENDERERS
+========================================================= */
+let state = loadState();
+let currentView = localStorage.getItem(KEY_VIEW) || "home";
+
+function setActiveTab(view){
+  currentView = view;
+  localStorage.setItem(KEY_VIEW, view);
+  tabs.forEach(t=>{
+    const active = t.dataset.view === view;
+    t.setAttribute("aria-selected", active ? "true" : "false");
+  });
+}
+
+function renderHome(){
+  const allTeams = Object.values(CAMP.groups).flat().length;
+  const totalGroups = Object.keys(CAMP.groups).length;
+  const totalMatches = GS_INDEX.length;
+
+  let decided=0;
+  for(const item of GS_INDEX){
+    const info = seriesInfo(getGsSeries(item.id), 2);
+    if(info.decided) decided++;
+  }
+  const open = totalMatches - decided;
+
+  const complete = groupStageIsComplete();
+
+  // habilita playoffs quando completo
+  tabPlayoffs.disabled = !complete;
+  tabPlayoffs.title = complete ? "" : "Desbloqueia quando finalizar a fase de grupos";
+
+  content.innerHTML = `
+    <section class="card">
+      <div class="cardHead">
+        <h2>📌 Visão Geral</h2>
+        <span class="hint">Progresso automático • MD3 (grupos) • Playoffs (16)</span>
+      </div>
+      <div class="section">
+        <div class="kpis">
+          <div class="kpi"><div class="n">${allTeams}</div><div class="l">Times</div></div>
+          <div class="kpi"><div class="n">${totalGroups}</div><div class="l">Grupos</div></div>
+          <div class="kpi"><div class="n">${decided}/${totalMatches}</div><div class="l">Séries decididas</div></div>
+          <div class="kpi"><div class="n">${open}</div><div class="l">Séries em aberto</div></div>
+        </div>
+
+        <div class="note" style="margin-top:12px">
+          ✅ <b>Como funciona:</b><br>
+          • Digite os gols em <b>J1/J2/J3</b> (MD3). Quem vencer <b>2 jogos</b> vence a série (vale <b>3 pontos</b>).<br>
+          • Se a série decidir antes (ex.: 2–0), os jogos extras travam automaticamente.<br>
+          • As <b>tabelas por grupo</b> atualizam sozinhas (PTS, SG, GF).<br>
+          • O botão <b>Playoffs</b> desbloqueia sozinho quando <b>todas</b> as séries da fase de grupos estiverem decididas.
+        </div>
+
+        <div class="note" style="margin-top:10px; opacity:.92">
+          ⚠️ Observação: no Grupo H, o calendário original ficou com um confronto “Hush B/Cyclone x Hush B/Cyclone”.
+          Se você quiser, depois eu ajusto isso quando você me disser o nome correto do outro time.
+        </div>
+      </div>
+    </section>
+  `;
+}
+
+function buildMatchCardGroupStage(item, idxInGroup){
+  const id = item.id;
+  const series = getGsSeries(id);
+  const info = seriesInfo(series, 2);
+
+  const aTeamKey = teamKey(item.a);
+  const bTeamKey = teamKey(item.b);
+
+  const wrap = document.createElement("div");
+  wrap.className = "match";
+  wrap.innerHTML = `
+    <div class="matchTop">
+      <div>Confronto ${idxInGroup}</div>
+      <div class="seriesPill" id="pill_${esc(id)}">Série: ${info.wA}–${info.wB}</div>
+    </div>
+
+    <div class="rowTeams">
+      <div class="side">
+        <img class="teamImg" data-team="${esc(aTeamKey)}" src="" alt="${esc(item.a)}" style="display:none">
+        <div class="name" title="${esc(item.a)}">${esc(item.a)}</div>
+      </div>
+      <div class="vs">x</div>
+      <div class="side right">
+        <div class="name" title="${esc(item.b)}">${esc(item.b)}</div>
+        <img class="teamImg" data-team="${esc(bTeamKey)}" src="" alt="${esc(item.b)}" style="display:none">
+      </div>
+    </div>
+
+    <div class="games">
+      ${[0,1,2].map(i=>`
+        <div class="gameRow">
+          <div class="glabel">J${i+1}</div>
+          <input class="scoreInput" type="number" inputmode="numeric" pattern="[0-9]*" min="0" max="20"
+                 id="in_${esc(id)}_${i}_a" placeholder="—" value="${series[i]?.a ?? ""}">
+          <div style="text-align:center; font-weight:1000; opacity:.85">x</div>
+          <input class="scoreInput" type="number" inputmode="numeric" pattern="[0-9]*" min="0" max="20"
+                 id="in_${esc(id)}_${i}_b" placeholder="—" value="${series[i]?.b ?? ""}">
+        </div>
+      `).join("")}
+    </div>
+
+    <div class="note" id="note_${esc(id)}">
+      ${info.decided ? "✅ Série decidida. (Jogos extras travam automaticamente.)" : "Digite os gols. Empate no jogo não conta vitória."}
+    </div>
+  `;
+
+  // wiring + auto-next field
+  const inputs = [];
+  for(let i=0;i<3;i++){
+    const aIn = wrap.querySelector(`#in_${cssEscape(id)}_${i}_a`);
+    const bIn = wrap.querySelector(`#in_${cssEscape(id)}_${i}_b`);
+    inputs.push(aIn, bIn);
+
+    const onInput = ()=>{
+      aIn.value = clampInt(aIn.value, 0, 20);
+      bIn.value = clampInt(bIn.value, 0, 20);
+
+      setGsGame(id, i, aIn.value, bIn.value);
+
+      // recompute
+      const s2 = getGsSeries(id);
+      const inf2 = seriesInfo(s2, 2);
+
+      // lock extras
+      if(inf2.lockFrom !== null){
+        for(let j=inf2.lockFrom;j<3;j++){
+          const aX = wrap.querySelector(`#in_${cssEscape(id)}_${j}_a`);
+          const bX = wrap.querySelector(`#in_${cssEscape(id)}_${j}_b`);
+          if(aX && bX){
+            aX.value=""; bX.value="";
+            aX.disabled=true; bX.disabled=true;
+            setGsGame(id, j, "", "");
+          }
+        }
+      }else{
+        // unlock (se reabrir)
+        for(let j=0;j<3;j++){
+          const aX = wrap.querySelector(`#in_${cssEscape(id)}_${j}_a`);
+          const bX = wrap.querySelector(`#in_${cssEscape(id)}_${j}_b`);
+          if(aX && bX){ aX.disabled=false; bX.disabled=false; }
+        }
+      }
+
+      const pill = wrap.querySelector(`#pill_${cssEscape(id)}`);
+      pill.textContent = `Série: ${inf2.wA}–${inf2.wB}`;
+
+      const note = wrap.querySelector(`#note_${cssEscape(id)}`);
+      note.textContent = inf2.decided
+        ? "✅ Série decidida. (Jogos extras travam automaticamente.)"
+        : "Digite os gols. Empate no jogo não conta vitória.";
+
+      // atualiza a tela inteira (tabelas, unlock etc.)
+      render();
+
+      // auto-next field (vai pro próximo input)
+      // só pula se o usuário digitou algo (não vazio)
+      if(aIn.value !== "" || bIn.value !== ""){
+        const all = Array.from(document.querySelectorAll(".scoreInput"));
+        const cur = document.activeElement;
+        const idx = all.indexOf(cur);
+        if(idx >= 0){
+          // busca próximo habilitado
+          for(let k=idx+1;k<all.length;k++){
+            if(!all[k].disabled){
+              all[k].focus();
+              all[k].select();
+              break;
+            }
+          }
+        }
+      }
+    };
+
+    aIn.addEventListener("input", onInput);
+    bIn.addEventListener("input", onInput);
+  }
+
+  // lock inicial se já decidiu cedo
+  if(info.lockFrom !== null){
+    for(let j=info.lockFrom;j<3;j++){
+      const aX = wrap.querySelector(`#in_${cssEscape(id)}_${j}_a`);
+      const bX = wrap.querySelector(`#in_${cssEscape(id)}_${j}_b`);
+      if(aX && bX){ aX.disabled=true; bX.disabled=true; }
+    }
+  }
+
+  return wrap;
+}
+
+function renderSchedule(){
+  const complete = groupStageIsComplete();
+  tabPlayoffs.disabled = !complete;
+
+  // agrupar por date
+  const byDate = {};
+  for(const block of CAMP.schedule){
+    (byDate[block.date] ||= []).push(block);
+  }
+
+  const dates = Object.keys(byDate); // já está em ordem do array original (mas object não garante)
+  // vamos ordenar pela ordem que aparece no schedule
+  const dateOrder = [];
+  for(const b of CAMP.schedule){
+    if(!dateOrder.includes(b.date)) dateOrder.push(b.date);
+  }
+
+  content.innerHTML = `
+    <section class="card">
+      <div class="cardHead">
+        <h2>🗓️ Calendário + Resultados</h2>
+        <span class="hint">MD3 • digite gols • trava jogos extras • atualiza tabelas</span>
+      </div>
+      <div class="section">
+        <div class="note">
+          ✅ Cada confronto é <b>MD3</b>. Digite os gols de <b>J1/J2/J3</b>.
+          Quando alguém vencer 2 jogos, a série fecha e os jogos extras travam.
+        </div>
+      </div>
+    </section>
+  `;
+
+  const holder = document.createElement("div");
+  holder.className = "dayGrid";
+  holder.style.marginTop = "14px";
+  content.appendChild(holder);
+
+  dateOrder.forEach(date=>{
+    const blocks = byDate[date];
+
+    // stats do dia
+    let decided=0, open=0;
+    let goals=0;
+
+    for(const b of blocks){
+      for(const m of b.matches){
+        const id = matchId("GS", { round:b.round, date:b.date, group:m.group, a:m.a, b:m.b });
+        const info = seriesInfo(getGsSeries(id), 2);
+        if(info.decided) decided++; else open++;
+        goals += info.gfA + info.gfB;
+      }
+    }
+
+    const dayCard = document.createElement("section");
+    dayCard.className = "card";
+    dayCard.innerHTML = `
+      <div class="dayTitle">
+        <div>📅 ${esc(date)}</div>
+        <div class="badgePill">Decididas: ${decided} • Abertas: ${open} • Gols: ${goals}</div>
+      </div>
+      <div class="section">
+        <div class="groupsWrap" id="day_${esc(date)}"></div>
+      </div>
+    `;
+    holder.appendChild(dayCard);
+
+    const dayWrap = dayCard.querySelector(`#day_${cssEscape(date)}`);
+
+    // agrupar por grupo dentro do dia
+    const matchesByGroup = {};
+    const round = blocks[0]?.round || 0;
+    blocks.forEach(b=>{
+      b.matches.forEach(m => (matchesByGroup[m.group] ||= []).push({ block:b, m }));
+    });
+
+    // ordem de grupos A..H
+    const gOrder = Object.keys(CAMP.groups);
+
+    gOrder.forEach(gKey=>{
+      if(!matchesByGroup[gKey]) return;
+
+      const gBlock = document.createElement("div");
+      gBlock.className = "groupBlock";
+      gBlock.innerHTML = `
+        <div class="groupHead">
+          <div class="t">🏆 Grupo ${esc(gKey)}</div>
+          <div class="m">Rodada ${round} • ${CAMP.groupStageMode} • Série vale 3 pts</div>
+        </div>
+        <div class="matches" id="matches_${esc(date)}_${esc(gKey)}"></div>
+      `;
+      dayWrap.appendChild(gBlock);
+
+      const mHolder = gBlock.querySelector(`#matches_${cssEscape(date)}_${cssEscape(gKey)}`);
+      matchesByGroup[gKey].forEach((obj, i)=>{
+        const b = obj.block;
+        const m = obj.m;
+        const id = matchId("GS", { round:b.round, date:b.date, group:m.group, a:m.a, b:m.b });
+        const item = { id, round:b.round, date:b.date, group:m.group, a:m.a, b:m.b };
+        mHolder.appendChild(buildMatchCardGroupStage(item, i+1));
+      });
+    });
+  });
+}
+
+function renderTables(){
+  const complete = groupStageIsComplete();
+  tabPlayoffs.disabled = !complete;
+
+  const tables = computeAllTables();
+
+  let html = `
+    <section class="card">
+      <div class="cardHead">
+        <h2>📊 Tabelas — Separadas por Grupo</h2>
+        <span class="hint">Desempate: PTS, SG, GF • Top 2 verde</span>
+      </div>
+      <div class="section">
+        <div class="note">
+          Atualiza automaticamente conforme você preenche os resultados no calendário.
+        </div>
+      </div>
+    </section>
+  `;
+
+  const container = document.createElement("div");
+  container.className = "dayGrid";
+  container.style.marginTop = "14px";
+  content.innerHTML = html;
+  content.appendChild(container);
+
+  for(const gKey of Object.keys(CAMP.groups)){
+    const card = document.createElement("section");
+    card.className = "card";
+    card.innerHTML = `
+      <div class="cardHead">
+        <h2>🏆 Grupo ${esc(gKey)}</h2>
+        <span class="hint">Passam 2 • 3 pts por série vencida</span>
+      </div>
+      <div class="section">
+        <div style="overflow:auto">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:44px"></th>
+                <th style="width:44px">#</th>
+                <th>Time</th>
+                <th>PTS</th><th>V</th><th>D</th>
+                <th>GF</th><th>GA</th><th>SG</th>
+              </tr>
+            </thead>
+            <tbody id="tb_${esc(gKey)}"></tbody>
+          </table>
+        </div>
+      </div>
+    `;
+    container.appendChild(card);
+
+    const tb = card.querySelector(`#tb_${cssEscape(gKey)}`);
+    tb.innerHTML = "";
+
+    tables[gKey].forEach((r, idx)=>{
+      const rank = idx+1;
+      const tr = document.createElement("tr");
+      if(rank<=2) tr.classList.add("rowGood");
+      if(rank>=3) tr.classList.add("rowBad");
+      tr.innerHTML = `
+        <td><div class="miniDot"></div></td>
+        <td>${rank}</td>
+        <td>
+          <div class="tdTeam">
+            <div class="miniDot" style="opacity:.0"></div>
+            <span class="teamName">${esc(r.team)}</span>
+          </div>
+        </td>
+        <td>${r.pts}</td>
+        <td>${r.v}</td>
+        <td>${r.d}</td>
+        <td>${r.gf}</td>
+        <td>${r.ga}</td>
+        <td>${r.sg}</td>
+      `;
+      tb.appendChild(tr);
+    });
+  }
+}
+
+function buildPlayoffMatchUI(stageCode, matchObj, winnersMap){
+  const aName = resolveName(matchObj.a, winnersMap);
+  const bName = resolveName(matchObj.b, winnersMap);
+  const mode = matchObj.mode;
+
+  const id = matchId("PO", { code:matchObj.code, a:aName, b:bName, mode });
+  const len = seriesLen(mode);
+  const need = seriesNeededWins(mode);
+
+  const games = getPoSeries(id, len);
+  const info = seriesInfo(games, need);
+
+  const slot = document.createElement("div");
+  slot.className = "slot";
+  slot.innerHTML = `
+    <div class="top">
+      <div><b>${esc(matchObj.code)}</b></div>
+      <div class="mode">${esc(mode)}</div>
+    </div>
+
+    <div class="pair">
+      <div class="pname" title="${esc(aName)}">${esc(aName)}</div>
+      <div class="vs">x</div>
+      <div class="pname right" title="${esc(bName)}">${esc(bName)}</div>
+    </div>
+
+    <div class="note">${info.decided ? "✅ Série decidida" : "Preencha os jogos (empate não conta vitória)"}</div>
+
+    <div class="games">
+      ${Array.from({length:len}, (_,i)=>`
+        <div class="gameRow">
+          <div class="glabel">J${i+1}</div>
+          <input class="scoreInput" type="number" inputmode="numeric" pattern="[0-9]*" min="0" max="20"
+                 id="po_${esc(id)}_${i}_a" placeholder="—" value="${games[i]?.a ?? ""}" ${aName==="—"||bName==="—" ? "disabled" : ""}>
+          <div style="text-align:center; font-weight:1000; opacity:.85">x</div>
+          <input class="scoreInput" type="number" inputmode="numeric" pattern="[0-9]*" min="0" max="20"
+                 id="po_${esc(id)}_${i}_b" placeholder="—" value="${games[i]?.b ?? ""}" ${aName==="—"||bName==="—" ? "disabled" : ""}>
+        </div>
+      `).join("")}
+    </div>
+
+    <div class="seriesPill" id="po_pill_${esc(id)}">Série: ${info.wA}–${info.wB}</div>
+  `;
+
+  // listeners + lock extras + auto-next
+  for(let i=0;i<len;i++){
+    const aIn = slot.querySelector(`#po_${cssEscape(id)}_${i}_a`);
+    const bIn = slot.querySelector(`#po_${cssEscape(id)}_${i}_b`);
+    if(!aIn || !bIn) continue;
+
+    const onInput = ()=>{
+      aIn.value = clampInt(aIn.value, 0, 20);
+      bIn.value = clampInt(bIn.value, 0, 20);
+
+      setPoGame(id, i, aIn.value, bIn.value);
+
+      const games2 = getPoSeries(id, len);
+      const info2 = seriesInfo(games2, need);
+
+      // lock extras if decided early
+      if(info2.lockFrom !== null){
+        for(let j=info2.lockFrom;j<len;j++){
+          const aX = slot.querySelector(`#po_${cssEscape(id)}_${j}_a`);
+          const bX = slot.querySelector(`#po_${cssEscape(id)}_${j}_b`);
+          if(aX && bX){
+            aX.value=""; bX.value="";
+            aX.disabled=true; bX.disabled=true;
+            setPoGame(id, j, "", "");
+          }
+        }
+      }else{
+        for(let j=0;j<len;j++){
+          const aX = slot.querySelector(`#po_${cssEscape(id)}_${j}_a`);
+          const bX = slot.querySelector(`#po_${cssEscape(id)}_${j}_b`);
+          if(aX && bX){
+            // só reabilita se os times existem
+            if(aName!=="—" && bName!=="—"){
+              aX.disabled=false; bX.disabled=false;
+            }
+          }
+        }
+      }
+
+      const pill = slot.querySelector(`#po_pill_${cssEscape(id)}`);
+      pill.textContent = `Série: ${info2.wA}–${info2.wB}`;
+
+      render(); // atualiza winners e fases
+
+      // auto-next
+      if(aIn.value !== "" || bIn.value !== ""){
+        const all = Array.from(document.querySelectorAll(".scoreInput"));
+        const cur = document.activeElement;
+        const idx = all.indexOf(cur);
+        if(idx >= 0){
+          for(let k=idx+1;k<all.length;k++){
+            if(!all[k].disabled){
+              all[k].focus();
+              all[k].select();
+              break;
+            }
+          }
+        }
+      }
+    };
+
+    aIn.addEventListener("input", onInput);
+    bIn.addEventListener("input", onInput);
+  }
+
+  // lock inicial
+  if(info.lockFrom !== null){
+    for(let j=info.lockFrom;j<len;j++){
+      const aX = slot.querySelector(`#po_${cssEscape(id)}_${j}_a`);
+      const bX = slot.querySelector(`#po_${cssEscape(id)}_${j}_b`);
+      if(aX && bX){ aX.disabled=true; bX.disabled=true; }
+    }
+  }
+
+  return slot;
+}
+
+function renderPlayoffs(){
+  const complete = groupStageIsComplete();
+  tabPlayoffs.disabled = !complete;
+  if(!complete){
+    content.innerHTML = `
+      <section class="card">
+        <div class="cardHead">
+          <h2>🏆 Playoffs</h2>
+          <span class="hint">Bloqueado até finalizar a fase de grupos</span>
+        </div>
+        <div class="section">
+          <div class="note">
+            Finalize todos os confrontos da fase de grupos (todas as séries decididas) para liberar o chaveamento.
+          </div>
+        </div>
+      </section>
+    `;
+    return;
+  }
+
+  // bracket base
+  const br = buildPlayoffsBracket();
+
+  // compute winners progressively
+  const winners = {}; // code -> name
+
+  // R16 winners
+  br.R16.forEach(m=>{
+    const w = computePlayoffWinner(m.code, m.a, m.b, m.mode);
+    if(w) winners[m.code] = w;
+  });
+
+  // QF winners (resolve from R16)
+  br.QF.forEach(m=>{
+    const aName = resolveName(m.a, winners);
+    const bName = resolveName(m.b, winners);
+    const w = computePlayoffWinner(m.code, aName, bName, m.mode);
+    if(w) winners[m.code] = w;
+  });
+
+  // SF winners
+  br.SF.forEach(m=>{
+    const aName = resolveName(m.a, winners);
+    const bName = resolveName(m.b, winners);
+    const w = computePlayoffWinner(m.code, aName, bName, m.mode);
+    if(w) winners[m.code] = w;
+  });
+
+  // Final winner
+  br.F.forEach(m=>{
+    const aName = resolveName(m.a, winners);
+    const bName = resolveName(m.b, winners);
+    const w = computePlayoffWinner(m.code, aName, bName, m.mode);
+    if(w) winners[m.code] = w;
+  });
+
+  // UI
+  content.innerHTML = `
+    <section class="card">
+      <div class="cardHead">
+        <h2>🏆 Playoffs — Chaveamento Automático</h2>
+        <span class="hint">Oitavas/Quartas MD3 • Semi/Final MD5 • trava jogos extras</span>
+      </div>
+      <div class="section">
+        <div class="note">
+          O chaveamento pega automaticamente <b>A1/A2…H1/H2</b> pela tabela. Se você mudar resultados, o chaveamento atualiza.
+        </div>
+      </div>
+    </section>
+
+    <section class="card" style="margin-top:14px">
+      <div class="cardHead">
+        <h2>👑 Campeão</h2>
+        <span class="hint">${winners["F-1"] ? "✅ Já temos campeão!" : "Ainda em disputa"}</span>
+      </div>
+      <div class="section">
+        <div style="font-weight:1000; font-size:18px">${esc(winners["F-1"] || "—")}</div>
+        <div class="note" style="margin-top:8px">Dica: preencha as oitavas primeiro (o resto destrava sozinho).</div>
+      </div>
+    </section>
+  `;
+
+  const brCard = document.createElement("section");
+  brCard.className = "card";
+  brCard.style.marginTop = "14px";
+  brCard.innerHTML = `
+    <div class="cardHead">
+      <h2>🧩 Chaveamento</h2>
+      <span class="hint">Preencha os placares e avance</span>
+    </div>
+    <div class="section">
+      <div class="bracket">
+        <div class="brCols" id="brCols"></div>
+      </div>
+    </div>
+  `;
+  content.appendChild(brCard);
+
+  const brCols = brCard.querySelector("#brCols");
+
+  const col1 = document.createElement("div");
+  col1.className = "col";
+  col1.innerHTML = `<div class="colHead">Oitavas <span class="mode">MD3</span></div><div class="slots" id="col_r16"></div>`;
+  brCols.appendChild(col1);
+
+  const col2 = document.createElement("div");
+  col2.className = "col";
+  col2.innerHTML = `<div class="colHead">Quartas <span class="mode">MD3</span></div><div class="slots" id="col_qf"></div>`;
+  brCols.appendChild(col2);
+
+  const col3 = document.createElement("div");
+  col3.className = "col";
+  col3.innerHTML = `<div class="colHead">Semifinal <span class="mode">MD5</span></div><div class="slots" id="col_sf"></div>`;
+  brCols.appendChild(col3);
+
+  const col4 = document.createElement("div");
+  col4.className = "col";
+  col4.innerHTML = `<div class="colHead">Final <span class="mode">MD5</span></div><div class="slots" id="col_f"></div>`;
+  brCols.appendChild(col4);
+
+  const r16Holder = col1.querySelector("#col_r16");
+  const qfHolder  = col2.querySelector("#col_qf");
+  const sfHolder  = col3.querySelector("#col_sf");
+  const fHolder   = col4.querySelector("#col_f");
+
+  br.R16.forEach(m=>{
+    r16Holder.appendChild(buildPlayoffMatchUI("R16", m, winners));
+  });
+  br.QF.forEach(m=>{
+    qfHolder.appendChild(buildPlayoffMatchUI("QF", m, winners));
+  });
+  br.SF.forEach(m=>{
+    sfHolder.appendChild(buildPlayoffMatchUI("SF", m, winners));
+  });
+  br.F.forEach(m=>{
+    fHolder.appendChild(buildPlayoffMatchUI("F", m, winners));
+  });
+}
+
+/* =========================================================
+  CHAT IA (responde sobre grupos, datas, rodada, tabelas, playoffs)
+========================================================= */
+function chatView(){
+  const complete = groupStageIsComplete();
+  tabPlayoffs.disabled = !complete;
+
+  content.innerHTML = `
+    <section class="card">
+      <div class="cardHead">
+        <h2>🤖 Chat IA — RECNATORS CUP</h2>
+        <span class="hint">Sabe tudo do camp + lê as tabelas e playoffs ao vivo</span>
+      </div>
+      <div class="section">
+        <div class="note">Exemplos: “grupo B”, “rodada 2”, “jogos do dia 27/02”, “tabela do grupo C”, “quem tá passando no grupo A?”, “playoffs”, “campeão”.</div>
+      </div>
+    </section>
+
+    <section class="card chatCard" style="margin-top:14px">
+      <div class="cardHead">
+        <h2>💬 Conversa</h2>
+        <span class="hint">Salva automaticamente</span>
+      </div>
+      <div class="msgs" id="msgs"></div>
+      <div class="composer">
+        <input class="in" id="chatInput" placeholder="Pergunte algo do campeonato..." />
+        <button class="send" id="chatSend">Enviar</button>
+      </div>
+    </section>
+
+    <section class="card" style="margin-top:14px">
+      <div class="cardHead">
+        <h2>⚡ Atalhos</h2>
+        <span class="hint">Clique e envia</span>
+      </div>
+      <div class="section">
+        <div class="chatWrap">
+          <div class="note">
+            ✅ Dica: pergunte também “quem joga hoje”, “jogos do TOG”, “classificação grupo H”.
+          </div>
+          <div class="sidePanel">
+            <div class="pill" data-q="mostrar todos os grupos">📋 Mostrar grupos</div>
+            <div class="pill" data-q="calendário completo">🗓️ Calendário completo</div>
+            <div class="pill" data-q="rodada 1">🔥 Rodada 1</div>
+            <div class="pill" data-q="rodada 2">🔥 Rodada 2</div>
+            <div class="pill" data-q="rodada 3">🔥 Rodada 3</div>
+            <div class="pill" data-q="jogos do dia 27/02">📅 Jogos 27/02</div>
+            <div class="pill" data-q="tabela grupo A">📊 Tabela Grupo A</div>
+            <div class="pill" data-q="quem está passando no grupo B">✅ Quem passa (Grupo B)</div>
+            <div class="pill" data-q="playoffs">🏆 Playoffs</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  `;
+
+  const msgs = document.getElementById("msgs");
+  const chatInput = document.getElementById("chatInput");
+  const chatSend = document.getElementById("chatSend");
+  const pills = Array.from(document.querySelectorAll(".pill"));
+
+  function addBubble(text, who){
+    const div = document.createElement("div");
+    div.className = "bubble " + (who==="me" ? "me" : "bot");
+    div.textContent = text;
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+    saveChat();
+  }
+
+  function saveChat(){
+    const arr = Array.from(msgs.querySelectorAll(".bubble")).map(el => ({
+      who: el.classList.contains("me") ? "me" : "bot",
+      text: el.textContent
+    }));
+    localStorage.setItem(KEY_CHAT, JSON.stringify(arr));
+  }
+
+  function loadChat(){
+    try{
+      const raw = localStorage.getItem(KEY_CHAT);
+      if(!raw) return false;
+      const arr = JSON.parse(raw);
+      msgs.innerHTML = "";
+      arr.forEach(m => addBubble(m.text, m.who));
+      return true;
+    }catch{
+      return false;
+    }
+  }
+
+  function parseRound(q){
+    const n = normalize(q);
+    const m = n.match(/\brodada\s*(\d)\b/);
+    return m ? parseInt(m[1],10) : null;
+  }
+
+  function parseDate(q){
+    const n = normalize(q);
+    const m1 = n.match(/(\d{1,2})\s*\/\s*(\d{1,2})/);
+    if(m1){
+      const d = m1[1].padStart(2,"0");
+      const mo = m1[2].padStart(2,"0");
+      return `${d}/${mo}`;
+    }
+    const m2 = n.match(/\bdia\s*(\d{1,2})\b/);
+    if(m2){
+      const d = m2[1].padStart(2,"0");
+      const hit = CAMP.schedule.find(s => s.date.startsWith(d+"/"));
+      return hit ? hit.date : null;
+    }
+    return null;
+  }
+
+  function allTeams(){
+    return Object.values(CAMP.groups).flat();
+  }
+
+  function findTeamInText(q){
+    const nq = normalize(q);
+    const teams = allTeams();
+    for(const t of teams){
+      const nt = normalize(t);
+      if(nq.includes(nt)) return t;
+    }
+    // tentativa por parte do nome
+    for(const t of teams){
+      const nt = normalize(t);
+      if(nt.length>=6 && nq.includes(nt.slice(0,6))) return t;
+    }
+    return null;
+  }
+
+  function groupsText(){
+    let out = `🏆 ${CAMP.name} — GRUPOS OFICIAIS\n\n`;
+    for(const g of Object.keys(CAMP.groups)){
+      out += `🔹 Grupo ${g}\n`;
+      CAMP.groups[g].forEach(t => out += `• ${t}\n`);
+      out += `\n`;
+    }
+    out += `⚠️ Avançam 2 por grupo.\n`;
+    return out.trim();
+  }
+
+  function dayText(date){
+    const blocks = CAMP.schedule.filter(s => s.date === date);
+    if(!blocks.length) return `Não achei jogos na data ${date}.`;
+    let out = `📅 Jogos do dia ${date} — MD3\n\n`;
+    blocks.forEach(b=>{
+      out += `🔥 Rodada ${b.round} — Grupos ${b.groups.join(" e ")}\n`;
+      const byG = {};
+      b.matches.forEach(m => (byG[m.group] ||= []).push(m));
+      Object.keys(byG).forEach(g=>{
+        out += `\n🏆 Grupo ${g}\n`;
+        byG[g].forEach(m => out += `• ${m.a} x ${m.b}\n`);
+      });
+      out += `\n`;
+    });
+    return out.trim();
+  }
+
+  function roundText(r){
+    const blocks = CAMP.schedule.filter(s => s.round === r);
+    if(!blocks.length) return `Não achei a Rodada ${r}.`;
+    let out = `🔥 RODADA ${r} — MD3\n\n`;
+    blocks.forEach(b=>{
+      out += `📍 ${b.date} — Grupos ${b.groups.join(" e ")}\n`;
+      const byG = {};
+      b.matches.forEach(m => (byG[m.group] ||= []).push(m));
+      Object.keys(byG).forEach(g=>{
+        out += `\n🏆 Grupo ${g}\n`;
+        byG[g].forEach(m => out += `• ${m.a} x ${m.b}\n`);
+      });
+      out += `\n━━━━━━━━━━━━━━\n\n`;
+    });
+    return out.trim();
+  }
+
+  function groupTableText(gKey){
+    gKey = String(gKey).toUpperCase();
+    if(!CAMP.groups[gKey]) return `Não existe Grupo ${gKey}.`;
+    const rows = computeGroupTable(gKey);
+    let out = `📊 Tabela — Grupo ${gKey}\n\n`;
+    rows.forEach((r,i)=>{
+      out += `${i+1}. ${r.team} — ${r.pts} pts (SG ${r.sg}, GF ${r.gf})\n`;
+    });
+    out += `\n✅ Passam: 1º e 2º.\n`;
+    return out.trim();
+  }
+
+  function whoPassesText(gKey){
+    gKey = String(gKey).toUpperCase();
+    if(!CAMP.groups[gKey]) return `Não existe Grupo ${gKey}.`;
+    const rows = computeGroupTable(gKey);
+    return `✅ No Grupo ${gKey}, estão passando agora:\n1) ${rows[0]?.team || "—"}\n2) ${rows[1]?.team || "—"}`;
+  }
+
+  function teamGamesText(team){
+    const nt = normalize(team);
+    const hits = [];
+    for(const s of CAMP.schedule){
+      for(const m of s.matches){
+        if(normalize(m.a) === nt || normalize(m.b) === nt){
+          hits.push({ date:s.date, round:s.round, group:m.group, a:m.a, b:m.b });
+        }
+      }
+    }
+    if(!hits.length) return `Não achei jogos do time "${team}".`;
+    let out = `🎮 Jogos de ${team} (fase de grupos — MD3)\n\n`;
+    hits.forEach(h=>{
+      out += `📍 ${h.date} (Rodada ${h.round}) — Grupo ${h.group}\n• ${h.a} x ${h.b}\n\n`;
+    });
+    return out.trim();
+  }
+
+  function playoffsText(){
+    const unlocked = groupStageIsComplete();
+    let out = `🏆 PLAYOFFS — ${CAMP.name}\n\n`;
+    out += `• Oitavas — ${CAMP.playoffs.oitavas}\n`;
+    out += `• Quartas — ${CAMP.playoffs.quartas}\n`;
+    out += `• Semifinal — ${CAMP.playoffs.semifinal}\n`;
+    out += `• Final — ${CAMP.playoffs.final}\n\n`;
+    out += unlocked ? "✅ Playoffs já está liberado na aba Playoffs." : "🔒 Playoffs libera quando finalizar a fase de grupos.";
+    return out.trim();
+  }
+
+  function smartAnswer(q){
+    const n = normalize(q);
+
+    if(n.includes("grupo") && n.match(/\bgrupo\s*[a-h]\b/)){
+      const m = n.match(/\bgrupo\s*([a-h])\b/);
+      // se pedir tabela
+      if(n.includes("tabela") || n.includes("classificacao") || n.includes("classificação")){
+        return groupTableText(m[1]);
+      }
+      // se pedir quem passa
+      if(n.includes("passa") || n.includes("passando")){
+        return whoPassesText(m[1]);
+      }
+      // info do grupo
+      let out = `🏆 Grupo ${String(m[1]).toUpperCase()}\n`;
+      CAMP.groups[String(m[1]).toUpperCase()].forEach(t => out += `• ${t}\n`);
+      return out.trim();
+    }
+
+    if(n.includes("grupos") || n.includes("mostrar todos os grupos")){
+      return groupsText();
+    }
+
+    if(n.includes("calendario") || n.includes("calendário") || n.includes("completo")){
+      let out = `🗓️ CALENDÁRIO — ${CAMP.name}\n\n`;
+      out += roundText(1) + "\n\n" + roundText(2) + "\n\n" + roundText(3);
+      return out.trim();
+    }
+
+    const r = parseRound(q);
+    if(r) return roundText(r);
+
+    const date = parseDate(q);
+    if(date) return dayText(date);
+
+    if(n.includes("tabela") && n.match(/\bgrupo\s*[a-h]\b/)){
+      const m = n.match(/\bgrupo\s*([a-h])\b/);
+      return groupTableText(m[1]);
+    }
+
+    if(n.includes("passa") && n.match(/\bgrupo\s*[a-h]\b/)){
+      const m = n.match(/\bgrupo\s*([a-h])\b/);
+      return whoPassesText(m[1]);
+    }
+
+    if(n.includes("playoff") || n.includes("playoffs") || n.includes("oitavas") || n.includes("quartas") || n.includes("semifinal") || n.includes("final")){
+      return playoffsText();
+    }
+
+    const team = findTeamInText(q);
+    if(team) return teamGamesText(team);
+
+    if(n.includes("quem joga hoje")){
+      // pega o 1º dia do calendário como "hoje" (sem relógio real)
+      const first = CAMP.schedule[0]?.date;
+      return first ? dayText(first) : "Sem calendário ainda.";
+    }
+
+    return `Eu consigo responder tudo do ${CAMP.name}.\nTenta: "grupo B", "tabela grupo C", "rodada 2", "jogos do dia 27/02", "jogos do TOG", "playoffs".`;
+  }
+
+  function sendMsg(text){
+    const t = String(text||"").trim();
+    if(!t) return;
+    addBubble(t, "me");
+    addBubble(smartAnswer(t), "bot");
+  }
+
+  chatSend.addEventListener("click", ()=> {
+    const v = chatInput.value;
+    chatInput.value = "";
+    sendMsg(v);
+  });
+
+  chatInput.addEventListener("keydown", (e)=>{
+    if(e.key === "Enter"){
+      e.preventDefault();
+      const v = chatInput.value;
+      chatInput.value = "";
+      sendMsg(v);
+    }
+  });
+
+  pills.forEach(p=>{
+    p.addEventListener("click", ()=>{
+      const q = p.dataset.q || "";
+      sendMsg(q);
+    });
+  });
+
+  const loaded = loadChat();
+  if(!loaded){
+    addBubble(`Fala! Eu sou o Chat IA do ${CAMP.name}. Pergunta qualquer coisa do camp 😄`, "bot");
+    addBubble(`Exemplos: "grupo B", "tabela grupo C", "rodada 2", "jogos do dia 27/02", "jogos do TOG", "playoffs".`, "bot");
+  }
+}
+
+/* =========================================================
+  COPY (aba atual)
+========================================================= */
+async function copyText(text){
+  try{
+    await navigator.clipboard.writeText(text);
+    alert("Copiado!");
+  }catch{
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    ta.remove();
+    alert("Copiado!");
+  }
+}
+
+function buildCopyForView(view){
+  if(view === "home"){
+    const totalMatches = GS_INDEX.length;
+    let decided=0;
+    for(const item of GS_INDEX){
+      if(seriesInfo(getGsSeries(item.id), 2).decided) decided++;
+    }
+    return `🏆 ${CAMP.name}\nSéries decididas: ${decided}/${totalMatches}\nFase de grupos: MD3\nPlayoffs: Oitavas/Quartas MD3 • Semi/Final MD5`;
+  }
+
+  if(view === "tables"){
+    let out = `📊 TABELAS — ${CAMP.name}\n\n`;
+    for(const gKey of Object.keys(CAMP.groups)){
+      const rows = computeGroupTable(gKey);
+      out += `🏆 Grupo ${gKey}\n`;
+      rows.forEach((r,i)=> out += `${i+1}. ${r.team} — ${r.pts} pts (SG ${r.sg}, GF ${r.gf})\n`);
+      out += `\n`;
+    }
+    return out.trim();
+  }
+
+  if(view === "playoffs"){
+    if(!groupStageIsComplete()) return "🔒 Playoffs ainda não liberado (finalize a fase de grupos).";
+    const top2 = getTop2ByGroup();
+    let out = `🏆 PLAYOFFS — ${CAMP.name}\n\nClassificados (Top2 por grupo):\n`;
+    for(const gKey of Object.keys(CAMP.groups)){
+      out += `Grupo ${gKey}: 1) ${top2[gKey].one || "—"} | 2) ${top2[gKey].two || "—"}\n`;
+    }
+    out += `\nOitavas/Quartas MD3 • Semi/Final MD5`;
+    return out.trim();
+  }
+
+  if(view === "schedule"){
+    let out = `🗓️ CALENDÁRIO — ${CAMP.name} (MD3)\n\n`;
+    // por datas
+    const order = [];
+    CAMP.schedule.forEach(b=>{ if(!order.includes(b.date)) order.push(b.date); });
+    for(const d of order){
+      out += `📅 ${d}\n`;
+      CAMP.schedule.filter(x=>x.date===d).forEach(b=>{
+        out += `Rodada ${b.round} — Grupos ${b.groups.join(" e ")}\n`;
+        b.matches.forEach(m=> out += `• (G${m.group}) ${m.a} x ${m.b}\n`);
+      });
+      out += `\n`;
+    }
+    return out.trim();
+  }
+
+  if(view === "chat"){
+    return "🤖 Chat IA — (Copie pela própria conversa, se quiser).";
+  }
+
+  return `${CAMP.name}`;
+}
+
+/* =========================================================
+  MAIN RENDER
+========================================================= */
+function render(){
+  // desbloqueio playoffs
+  const complete = groupStageIsComplete();
+  tabPlayoffs.disabled = !complete;
+
+  if(currentView === "home") renderHome();
+  else if(currentView === "schedule") renderSchedule();
+  else if(currentView === "tables") renderTables();
+  else if(currentView === "playoffs") renderPlayoffs();
+  else if(currentView === "chat") chatView();
+  else renderHome();
+}
+
+/* =========================================================
+  TABS
+========================================================= */
+tabs.forEach(t=>{
+  t.addEventListener("click", ()=>{
+    if(t.disabled) return;
+    setActiveTab(t.dataset.view);
+    render();
+  });
+});
+
+document.getElementById("btnResetAll").addEventListener("click", ()=>{
+  if(confirm("Resetar TODOS os resultados e chat?")) resetAll();
+});
+
+document.getElementById("btnCopyView").addEventListener("click", ()=>{
+  copyText(buildCopyForView(currentView));
+});
+
+/* =========================================================
+  START
+========================================================= */
+setActiveTab(currentView);
+render();
+</script>
+</body>
+</html>
