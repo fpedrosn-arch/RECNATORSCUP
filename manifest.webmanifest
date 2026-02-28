@@ -1,0 +1,18 @@
+{
+  "name": "Recnators Cup",
+  "short_name": "Recnators",
+  "start_url": "/RECNATORSCUP/",
+  "scope": "/RECNATORSCUP/",
+  "display": "standalone",
+  "background_color": "#070a12",
+  "theme_color": "#0b1020",
+  "description": "App oficial da Recnators Cup. Tabela, grupos, calendário e resultados.",
+  "icons": [
+    {
+      "src": "/RECNATORSCUP/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
